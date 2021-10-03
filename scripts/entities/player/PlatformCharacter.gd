@@ -1,8 +1,14 @@
 extends "../entity.gd"
 
+const FIREBALL = preload("res://scenes/Fireball.tscn")
+
 var released_jump = false
 var velocity = Vector2.ZERO
 var is_attacking = false
+
+var attack_cooldown = 0.1
+var next_attack = 0
+
 
 func _init():
 	max_health = 10;
@@ -34,6 +40,20 @@ func get_input():
 			released_jump = true
 	is_attacking = Input.is_action_pressed("attack_player_1")
 	
+	if Input.is_action_just_pressed("attack_player_1"):
+		if OS.get_ticks_msec() > next_attack:
+			next_attack = OS.get_ticks_msec() + attack_cooldown*1000
+			var adjust = 8
+			is_attacking = true
+			var fireball = FIREBALL.instance()
+			get_parent().add_child(fireball)
+			if$PlayerAnimation.flip_h:
+				adjust = -8
+				fireball.direction = -1
+			fireball.position = Vector2(position.x + adjust, position.y)
+			fireball.speed += abs(velocity.x)
+			fireball.damage = 1
+	
 func _physics_process(delta):
 	get_input()
 	velocity.y += gravity * delta
@@ -53,3 +73,17 @@ func jump_cut():
 	if velocity.y < gravity:
 		velocity.y = velocity.y/2
 
+
+
+func _on_VirtualAnalog_analog_touch(touching):
+	pass # Replace with function body.
+
+
+func _on_VirtualAnalog_analog_move(direction):
+	if direction.x < 0:
+		Input.action_press("ui_left")
+	else:
+		Input.action_press("ui_right")
+		
+func _on_attack_signal():
+	print("signal got")
